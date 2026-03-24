@@ -2,7 +2,7 @@ from fastapi import FastAPI, Path, HTTPException, Query
 from fastapi.responses import JSONResponse
 import json
 from pydantic import Field, BaseModel, computed_field
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Optional
 
 app = FastAPI()
 
@@ -33,6 +33,13 @@ class data_validator(BaseModel):
         if self.bmi >= 30:
             return 'obese'
         
+class patient_update(BaseModel):
+    name: Annotated[Optional[str], Field(default=None)]
+    age: Annotated[Optional[int], Field(default=None, ge=0, le=120)]
+    gender: Annotated[Optional[Literal['male', 'female', 'others']], Field(default=None)]
+    height: Annotated[Optional[float], Field(default=None, ge=0)]
+    weight: Annotated[Optional[float], Field(default=None, ge=0)]
+
 
 def data_loader():
     with open('patient_data.json', 'r') as f:
