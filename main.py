@@ -9,11 +9,11 @@ app = FastAPI()
 class data_validator(BaseModel):
     id: Annotated[str, Field(..., description="ID of the patient", examples=['P001'])]
     name: Annotated[str, Field(..., description="Name of the patient")]
-    age: Annotated[int, Field(..., description="Age of the patient", ge=0, le=120)]
+    age: Annotated[int, Field(..., description="Age of the patient", ge=1, le=120)]
     gender: Annotated[Literal['male', 'female', 'others'], Field(..., description="Gender of the patient")]
     city: Annotated[str, Field(..., description="City where patient belong")]
-    height: Annotated[float, Field(..., description="Height of the patient in meters", ge=0)]
-    weight: Annotated[float, Field(..., description="Weight of the patient in kgs", ge=0)]
+    height: Annotated[float, Field(..., description="Height of the patient in meters", ge=1)]
+    weight: Annotated[float, Field(..., description="Weight of the patient in kgs", ge=1)]
 
     @computed_field
     @property
@@ -35,10 +35,10 @@ class data_validator(BaseModel):
         
 class patient_update(BaseModel):
     name: Annotated[Optional[str], Field(default=None)]
-    age: Annotated[Optional[int], Field(default=None, ge=0, le=120)]
+    age: Annotated[Optional[int], Field(default=None, ge=1, le=120)]
     gender: Annotated[Optional[Literal['male', 'female', 'others']], Field(default=None)]
-    height: Annotated[Optional[float], Field(default=None, ge=0)]
-    weight: Annotated[Optional[float], Field(default=None, ge=0)]
+    height: Annotated[Optional[float], Field(default=None, ge=1)]
+    weight: Annotated[Optional[float], Field(default=None, ge=1)]
 
 
 def data_loader():
@@ -101,3 +101,29 @@ def create_patient(patient: data_validator):
     save_data(data)
 
     return JSONResponse(status_code=201, content={'message': 'Patient created successfully'})
+
+
+@app.put('/edit/{patient_id}')
+def update_fun(patient_id: str, pydantic_schema: patient_update):
+    data = data_loader()
+
+    if patient_id not in data:
+        raise HTTPException(status_code=404, detail='Patient not found in Data base')
+    
+    patient_existing_info = data[patient_id]
+
+    updated_patient_info = pydantic_schema.model_dump(exclude_unset=True)
+
+    for key, value in updated_patient_info.items():
+        patient_existing_info[key] = value
+
+    patient_existing_info['id'] = patient_id
+    patient_updated_pydantic = data_validator(**patient_existing_info)
+
+    patient_existing_info = patient_updated_pydantic.model_dump(exclude='id')
+
+    data[patient_id] = patient_existing_info
+
+    save_data(data)
+
+    return JSONResponse(status_code=201, content={'message': "Patient's detail updated successfully"})
