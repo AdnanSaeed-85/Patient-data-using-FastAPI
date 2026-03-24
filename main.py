@@ -127,3 +127,16 @@ def update_fun(patient_id: str, pydantic_schema: patient_update):
     save_data(data)
 
     return JSONResponse(status_code=201, content={'message': "Patient's detail updated successfully"})
+
+@app.delete('/delete/{patient_id}')
+def eliminate(patient_id: str):
+    data = data_loader()
+
+    if patient_id not in data:
+        return HTTPException(status_code=404, content='Patient not exists')
+    
+    del data[patient_id]
+
+    save_data(data)
+
+    return JSONResponse(status_code=200, content={'message': f"Patient: {patient_id} is deleted"})
